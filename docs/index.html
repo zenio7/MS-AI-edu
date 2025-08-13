@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>개념 비교 모드 - Interactive Concept Explorer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.26.0/cytoscape.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #ff6b6b, #ffd93d, #6bcf7f, #4d79ff);
+            background-size: 400% 400%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: gradientShift 3s ease-in-out infinite;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            margin-bottom: 20px;
+        }
+
+        .comparison-controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .concept-input {
+            position: relative;
+        }
+
+        .concept-input input {
+            padding: 15px 20px;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            width: 200px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            color: white;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .concept-input input::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .concept-input input:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.05);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .vs-text {
+            font-size: 1.5rem;
+            font-weight: bold;
+            align-self: center;
+            color: #ffd93d;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .visualization-area {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        #cy {
+            width: 100%;
+            height: 600px;
+            border-radius: 15px;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px 15px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .stats-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #ffd93d;
+            margin-bottom: 5px;
+        }
+
+        .export-panel {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .export-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .export-btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 20px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            color: white;
+        }
+
+        .export-btn.mermaid {
+            background: linear-gradient(135deg, #ff6b6b, #ff8e8e);
+        }
+
+        .export-btn.png {
+            background: linear-gradient(135deg, #4d79ff, #7ba7ff);
+        }
+
+        .export-btn.json {
+            background: linear-gradient(135deg, #6bcf7f, #95d5a3);
+        }
+
+        .export-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .toggle-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .toggle-btn {
+            padding: 10px 20px;
+            border: none;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .toggle-btn:first-child {
+            border-radius: 20px 0 0 20px;
+        }
+
+        .toggle-btn:last-child {
+            border-radius: 0 20px 20px 0;
+        }
+
+        .toggle-btn.active {
+            background: linear-gradient(135deg, #ffd93d, #ffeb3b);
+            color: #333;
+            font-weight: bold;
+        }
+
+        .mode-description {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+
+        .controls-panel {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .control-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .control-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .control-btn.active {
+            background: linear-gradient(135deg, #6bcf7f, #95d5a3);
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="title">Interactive Concept Explorer</h1>
+            <p class="subtitle">AI-Powered Knowledge Network Visualization</p>
+        </div>
+
+        <div class="toggle-container">
+            <button class="toggle-btn active" onclick="switchMode('mindmap')">키워드 마인드맵</button>
+            <button class="toggle-btn" onclick="switchMode('graphrag')">문서 지식그래프</button>
+        </div>
+
+        <div id="mode-description" class="mode-description">
+            <strong>키워드 마인드맵 모드:</strong> 입력한 개념을 중심으로 관련 개념들을 계층적으로 탐색합니다.
+        </div>
+
+        <div class="comparison-controls">
+            <div class="concept-input">
+                <input type="text" placeholder="첫 번째 개념" value="머신러닝" id="concept1">
+            </div>
+            <div class="vs-text">VS</div>
+            <div class="concept-input">
+                <input type="text" placeholder="두 번째 개념" value="딥러닝" id="concept2">
+            </div>
+        </div>
+
+        <div class="controls-panel">
+            <button class="control-btn active" onclick="changeLayout('cose')" id="layout-cose">Force Layout</button>
+            <button class="control-btn" onclick="changeLayout('circle')" id="layout-circle">Circle Layout</button>
+            <button class="control-btn" onclick="changeLayout('concentric')" id="layout-concentric">Concentric Layout</button>
+            <button class="control-btn" onclick="changeLayout('breadthfirst')" id="layout-breadth">Hierarchical</button>
+        </div>
+
+        <div class="visualization-area">
+            <div id="cy"></div>
+
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color" style="background: linear-gradient(135deg, #ff6b6b, #ff8e8e);"></div>
+                    <span>첫 번째 개념</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: linear-gradient(135deg, #4d79ff, #7ba7ff);"></div>
+                    <span>두 번째 개념</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: linear-gradient(135deg, #6bcf7f, #95d5a3);"></div>
+                    <span>공통 개념</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: linear-gradient(135deg, #ffd93d, #ffeb3b);"></div>
+                    <span>관련 개념</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="stats-panel">
+            <div class="stat-card">
+                <div class="stat-number" id="shared-count">7</div>
+                <div>공통 개념</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="unique1-count">12</div>
+                <div>첫 번째 고유</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="unique2-count">8</div>
+                <div>두 번째 고유</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="similarity-score">85%</div>
+                <div>유사도</div>
+            </div>
+        </div>
+
+        <div class="export-panel">
+            <h3 style="text-align: center; margin-bottom: 15px;">📤 Export Options</h3>
+            <div class="export-buttons">
+                <button class="export-btn mermaid" onclick="exportMermaid()">Mermaid 다이어그램</button>
+                <button class="export-btn png" onclick="exportPNG()">PNG 이미지</button>
+                <button class="export-btn json" onclick="exportJSON()">JSON 데이터</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let cy;
+        let currentMode = 'mindmap';
+        let currentLayout = 'cose';
+
+        const conceptData = {
+            mindmap: {
+                concept1: {
+                    name: "머신러닝",
+                    shared: ["데이터", "알고리즘", "예측", "모델", "훈련", "평가", "AI"],
+                    unique: ["회귀분석", "분류", "클러스터링", "의사결정트리", "SVM", "랜덤포레스트", "앙상블", "피처엔지니어링", "교차검증"]
+                },
+                concept2: {
+                    name: "딥러닝",
+                    shared: ["데이터", "알고리즘", "예측", "모델", "훈련", "평가", "AI"],
+                    unique: ["신경망", "역전파", "CNN", "RNN", "LSTM", "Transformer", "GPU", "텐서플로우"]
+                }
+            },
+            graphrag: {
+                concept1: {
+                    name: "연구문서A",
+                    shared: ["데이터분석", "통계", "실험설계", "가설검증", "논문"],
+                    unique: ["질적연구", "인터뷰", "관찰법", "내용분석", "근거이론", "현상학"]
+                },
+                concept2: {
+                    name: "연구문서B", 
+                    shared: ["데이터분석", "통계", "실험설계", "가설검증", "논문"],
+                    unique: ["양적연구", "설문조사", "회귀분석", "ANOVA", "신뢰도", "타당도"]
+                }
+            }
+        };
+
+        function initializeCytoscape() {
+            cy = cytoscape({
+                container: document.getElementById('cy'),
+                
+                style: [
+                    {
+                        selector: 'node',
+                        style: {
+                            'label': 'data(label)',
+                            'text-valign': 'center',
+                            'text-halign': 'center',
+                            'font-size': '12px',
+                            'font-weight': 'bold',
+                            'color': 'white',
+                            'text-outline-width': 2,
+                            'text-outline-color': 'rgba(0,0,0,0.5)',
+                            'width': '80px',
+                            'height': '80px',
+                            'border-width': 3,
+                            'border-opacity': 0.8,
+                            'transition-property': 'all',
+                            'transition-duration': '0.3s'
+                        }
+                    },
+                    {
+                        selector: 'node[type="main1"]',
+                        style: {
+                            'background-gradient-direction': 'to-bottom-right',
+                            'background-gradient-stop-colors': '#ff6b6b #ff8e8e',
+                            'border-color': '#ff4757',
+                            'width': '100px',
+                            'height': '100px',
+                            'font-size': '14px'
+                        }
+                    },
+                    {
+                        selector: 'node[type="main2"]',
+                        style: {
+                            'background-gradient-direction': 'to-bottom-right',
+                            'background-gradient-stop-colors': '#4d79ff #7ba7ff',
+                            'border-color': '#3742fa',
+                            'width': '100px',
+                            'height': '100px',
+                            'font-size': '14px'
+                        }
+                    },
+                    {
+                        selector: 'node[type="shared"]',
+                        style: {
+                            'background-gradient-direction': 'to-bottom-right',
+                            'background-gradient-stop-colors': '#6bcf7f #95d5a3',
+                            'border-color': '#2ed573',
+                            'width': '85px',
+                            'height': '85px'
+                        }
+                    },
+                    {
+                        selector: 'node[type="unique1"]',
+                        style: {
+                            'background-gradient-direction': 'to-bottom-right',
+                            'background-gradient-stop-colors': '#ffd93d #ffeb3b',
+                            'border-color': '#ffa502',
+                            'color': '#333',
+                            'text-outline-color': 'rgba(255,255,255,0.8)',
+                            'width': '70px',
+                            'height': '70px'
+                        }
+                    },
+                    {
+                        selector: 'node[type="unique2"]',
+                        style: {
+                            'background-gradient-direction': 'to-bottom-right',
+                            'background-gradient-stop-colors': '#a8edea #fed6e3',
+                            'border-color': '#ff9ff3',
+                            'color': '#333',
+                            'text-outline-color': 'rgba(255,255,255,0.8)',
+                            'width': '70px',
+                            'height': '70px'
+                        }
+                    },
+                    {
+                        selector: 'node:hover',
+                        style: {
+                            'overlay-color': 'rgba(255,255,255,0.2)',
+                            'overlay-padding': '10px',
+                            'z-index': 10
+                        }
+                    },
+                    {
+                        selector: 'edge',
+                        style: {
+                            'width': 3,
+                            'line-color': 'rgba(255,255,255,0.4)',
+                            'target-arrow-color': 'rgba(255,255,255,0.4)',
+                            'target-arrow-shape': 'triangle',
+                            'curve-style': 'bezier',
+                            'opacity': 0.7,
+                            'animation-name': 'flow',
+                            'animation-duration': '2s',
+                            'animation-iteration-count': 'infinite'
+                        }
+                    },
+                    {
+                        selector: 'edge[type="strong"]',
+                        style: {
+                            'width': 5,
+                            'line-color': '#ffd93d',
+                            'target-arrow-color': '#ffd93d',
+                            'opacity': 0.9
+                        }
+                    },
+                    {
+                        selector: 'edge[type="shared"]',
+                        style: {
+                            'width': 4,
+                            'line-color': '#6bcf7f',
+                            'target-arrow-color': '#6bcf7f',
+                            'opacity': 0.8
+                        }
+                    }
+                ],
+
+                elements: [],
+
+                layout: {
+                    name: 'cose',
+                    animate: true,
+                    animationDuration: 1000,
+                    randomize: false,
+                    componentSpacing: 100,
+                    nodeOverlap: 20,
+                    nestingFactor: 5,
+                    gravity: 80,
+                    numIter: 2000,
+                    initialTemp: 200,
+                    coolingFactor: 0.95,
+                    minTemp: 1.0
+                }
+            });
+
+            // 노드 클릭 이벤트
+            cy.on('tap', 'node', function(evt) {
+                const node = evt.target;
+                const concept = node.data('label');
+                showConceptTooltip(concept, evt.renderedPosition);
+                
+                // 연결된 노드들 강조
+                const connectedNodes = node.connectedEdges().connectedNodes();
+                cy.elements().removeClass('highlighted');
+                node.addClass('highlighted');
+                connectedNodes.addClass('highlighted');
+            });
+
+            generateGraph();
+        }
+
+        function generateGraph() {
+            const data = conceptData[currentMode];
+            const concept1 = data.concept1;
+            const concept2 = data.concept2;
+            
+            const elements = [];
+            
+            // 메인 개념 노드들
+            elements.push({
+                data: { 
+                    id: 'main1', 
+                    label: concept1.name, 
+                    type: 'main1' 
+                }
+            });
+            
+            elements.push({
+                data: { 
+                    id: 'main2', 
+                    label: concept2.name, 
+                    type: 'main2' 
+                }
+            });
+            
+            // 공통 개념들
+            concept1.shared.forEach((concept, i) => {
+                const id = `shared_${i}`;
+                elements.push({
+                    data: { 
+                        id, 
+                        label: concept, 
+                        type: 'shared' 
+                    }
+                });
+                
+                // 메인 개념들과 연결
+                elements.push({
+                    data: { 
+                        id: `edge_main1_${id}`, 
+                        source: 'main1', 
+                        target: id, 
+                        type: 'shared' 
+                    }
+                });
+                
+                elements.push({
+                    data: { 
+                        id: `edge_main2_${id}`, 
+                        source: 'main2', 
+                        target: id, 
+                        type: 'shared' 
+                    }
+                });
+            });
+            
+            // 첫 번째 개념 고유 요소들
+            concept1.unique.slice(0, 8).forEach((concept, i) => {
+                const id = `unique1_${i}`;
+                elements.push({
+                    data: { 
+                        id, 
+                        label: concept, 
+                        type: 'unique1' 
+                    }
+                });
+                
+                elements.push({
+                    data: { 
+                        id: `edge_main1_${id}`, 
+                        source: 'main1', 
+                        target: id, 
+                        type: 'normal' 
+                    }
+                });
+            });
+            
+            // 두 번째 개념 고유 요소들
+            concept2.unique.forEach((concept, i) => {
+                const id = `unique2_${i}`;
+                elements.push({
+                    data: { 
+                        id, 
+                        label: concept, 
+                        type: 'unique2' 
+                    }
+                });
+                
+                elements.push({
+                    data: { 
+                        id: `edge_main2_${id}`, 
+                        source: 'main2', 
+                        target: id, 
+                        type: 'normal' 
+                    }
+                });
+            });
+            
+            // 일부 관련 개념들 간 연결 추가 (더 풍부한 네트워크를 위해)
+            if (currentMode === 'mindmap') {
+                elements.push({
+                    data: { 
+                        id: 'edge_neural_cnn', 
+                        source: 'unique2_0', 
+                        target: 'unique2_2', 
+                        type: 'strong' 
+                    }
+                });
+                
+                elements.push({
+                    data: { 
+                        id: 'edge_algorithm_svm', 
+                        source: 'shared_1', 
+                        target: 'unique1_4', 
+                        type: 'normal' 
+                    }
+                });
+            }
+            
+            cy.elements().remove();
+            cy.add(elements);
+            
+            // 레이아웃 적용
+            const layout = cy.layout({
+                name: currentLayout,
+                animate: true,
+                animationDuration: 1000,
+                randomize: false,
+                componentSpacing: 100,
+                nodeOverlap: 20,
+                nestingFactor: 5,
+                gravity: 80,
+                numIter: 2000,
+                initialTemp: 200,
+                coolingFactor: 0.95,
+                minTemp: 1.0,
+                spacingFactor: 1.5
+            });
+            
+            layout.run();
+            
+            // 통계 업데이트
+            updateStats();
+        }
+
+        function changeLayout(layoutName) {
+            currentLayout = layoutName;
+            
+            // 버튼 활성화 상태 업데이트
+            document.querySelectorAll('.control-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`layout-${layoutName}`).classList.add('active');
+            
+            const layoutOptions = {
+                cose: {
+                    name: 'cose',
+                    animate: true,
+                    animationDuration: 1000,
+                    componentSpacing: 100,
+                    nodeOverlap: 20,
+                    nestingFactor: 5,
+                    gravity: 80,
+                    numIter: 2000,
+                    spacingFactor: 1.5
+                },
+                circle: {
+                    name: 'circle',
+                    animate: true,
+                    animationDuration: 1000,
+                    spacing: 100
+                },
+                concentric: {
+                    name: 'concentric',
+                    animate: true,
+                    animationDuration: 1000,
+                    spacingFactor: 2,
+                    concentric: function(node) {
+                        if (node.data('type').includes('main')) return 3;
+                        if (node.data('type') === 'shared') return 2;
+                        return 1;
+                    },
+                    levelWidth: function() { return 1; }
+                },
+                breadthfirst: {
+                    name: 'breadthfirst',
+                    animate: true,
+                    animationDuration: 1000,
+                    directed: true,
+                    roots: ['main1', 'main2'],
+                    spacingFactor: 1.5
+                }
+            };
+            
+            const layout = cy.layout(layoutOptions[layoutName]);
+            layout.run();
+        }
+
+        function switchMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.toggle-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            const descriptions = {
+                mindmap: '<strong>키워드 마인드맵 모드:</strong> 입력한 개념을 중심으로 관련 개념들을 계층적으로 탐색합니다.',
+                graphrag: '<strong>문서 지식그래프 모드:</strong> 사용자 문서를 분석하여 숨겨진 개념 연결을 발견합니다.'
+            };
+            
+            document.getElementById('mode-description').innerHTML = descriptions[mode];
+            
+            if (mode === 'graphrag') {
+                document.getElementById('concept1').placeholder = "문서/폴더 A";
+                document.getElementById('concept2').placeholder = "문서/폴더 B";
+                document.getElementById('concept1').value = "연구논문 폴더";
+                document.getElementById('concept2').value = "리포트 폴더";
+            } else {
+                document.getElementById('concept1').placeholder = "첫 번째 개념";
+                document.getElementById('concept2').placeholder = "두 번째 개념";
+                document.getElementById('concept1').value = "머신러닝";
+                document.getElementById('concept2').value = "딥러닝";
+            }
+            
+            generateGraph();
+        }
+
+        function showConceptTooltip(concept, position) {
+            // 실제 구현에서는 여기에 상세 정보 팝업 표시
+            console.log(`Concept clicked: ${concept} at position:`, position);
+        }
+
+        function updateStats() {
+            const data = conceptData[currentMode];
+            document.getElementById('shared-count').textContent = data.concept1.shared.length;
+            document.getElementById('unique1-count').textContent = data.concept1.unique.length;
+            document.getElementById('unique2-count').textContent = data.concept2.unique.length;
+            
+            const totalConcepts = data.concept1.shared.length + data.concept1.unique.length + data.concept2.unique.length;
+            const similarity = Math.round((data.concept1.shared.length / totalConcepts) * 100);
+            document.getElementById('similarity-score').textContent = similarity + '%';
+        }
+
+        function exportMermaid() {
+            const data = conceptData[currentMode];
+            let code = "graph TD\n";
+            
+            // 스타일 정의
+            code += "    classDef main1 fill:#ff6b6b,stroke:#ff4757,stroke-width:3px,color:#fff\n";
+            code += "    classDef main2 fill:#4d79ff,stroke:#3742fa,stroke-width:3px,color:#fff\n";
+            code += "    classDef shared fill:#6bcf7f,stroke:#2ed573,stroke-width:2px,color:#fff\n";
+            code += "    classDef unique1 fill:#ffd93d,stroke:#ffa502,stroke-width:2px,color:#333\n";
+            code += "    classDef unique2 fill:#a8edea,stroke:#ff9ff3,stroke-width:2px,color:#333\n\n";
+            
+            // 메인 노드들
+            code += `    A[${data.concept1.name}]:::main1\n`;
+            code += `    B[${data.concept2.name}]:::main2\n\n`;
+            
+            // 공통 개념들
+            data.concept1.shared.forEach((concept, i) => {
+                const id = `S${i}`;
+                code += `    ${id}[${concept}]:::shared\n`;
+                code += `    A --> ${id}\n`;
+                code += `    B --> ${id}\n`;
+            });
+            
+            code += "\n";
+            
+            // 고유 개념들
+            data.concept1.unique.slice(0, 6).forEach((concept, i) => {
+                const id = `U1${i}`;
+                code += `    ${id}[${concept}]:::unique1\n`;
+                code += `    A --> ${id}\n`;
+            });
+            
+            code += "\n";
+            
+            data.concept2.unique.slice(0, 6).forEach((concept, i) => {
+                const id = `U2${i}`;
+                code += `    ${id}[${concept}]:::unique2\n`;
+                code += `    B --> ${id}\n`;
+            });
+            
+            navigator.clipboard.writeText(code).then(() => {
+                alert('🎉 Mermaid 다이어그램 코드가 클립보드에 복사되었습니다!\n\nGitHub README에 바로 붙여넣기 하세요.\n\n' + code.substring(0, 200) + '...');
+            });
+        }
+
+        function exportPNG() {
+            const png64 = cy.png({
+                output: 'base64uri',
+                bg: 'transparent',
+                full: true,
+                scale: 2
+            });
+            
+            // 다운로드 링크 생성
+            const link = document.createElement('a');
+            link.download = 'concept-comparison.png';
+            link.href = png64;
+            link.click();
+        }
+
+        function exportJSON() {
+            const jsonData = {
+                comparison: {
+                    mode: currentMode,
+                    concept1: document.getElementById('concept1').value,
+                    concept2: document.getElementById('concept2').value,
+                    shared_concepts: conceptData[currentMode].concept1.shared,
+                    unique_concepts: {
+                        concept1: conceptData[currentMode].concept1.unique,
+                        concept2: conceptData[currentMode].concept2.unique
+                    },
+                    similarity_score: parseInt(document.getElementById('similarity-score').textContent) / 100,
+                    layout: currentLayout,
+                    generated_at: new Date().toISOString(),
+                    graph_data: cy.json()
+                }
+            };
+            
+            navigator.clipboard.writeText(JSON.stringify(jsonData, null, 2)).then(() => {
+                alert('📊 JSON 데이터가 클립보드에 복사되었습니다!');
+            });
+        }
+
+        // 입력 변경 시 실시간 업데이트
+        document.getElementById('concept1').addEventListener('input', debounce(generateGraph, 1500));
+        document.getElementById('concept2').addEventListener('input', debounce(generateGraph, 1500));
+
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        // 페이지 로드 시 초기화
+        window.addEventListener('load', () => {
+            setTimeout(initializeCytoscape, 500);
+        });
+    </script>
+</body>
+</html>
