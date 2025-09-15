@@ -66,11 +66,11 @@
         }
 
         .concept-input input {
-            padding: 15px 20px;
+            padding: 10px 15px;
             border: none;
             border-radius: 25px;
             font-size: 16px;
-            width: 200px;
+            width: 150px;
             background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(10px);
             color: white;
@@ -112,6 +112,7 @@
             height: 600px;
             border-radius: 15px;
             background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            pointer-events: auto;
         }
 
         .legend {
@@ -319,7 +320,7 @@
             position: absolute;
             top: 20px;
             right: 20px;
-            z-index: 1000;
+            z-index: 9999;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -329,6 +330,7 @@
             padding: 15px 10px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
             border: 1px solid rgba(255, 255, 255, 0.2);
+            pointer-events: auto;
         }
 
         .zoom-slider-container {
@@ -339,22 +341,22 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            pointer-events: auto;
         }
 
         .zoom-slider {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 150px;
-            height: 8px;
-            background: linear-gradient(to right, #ff6b6b 0%, #ffd93d 50%, #6bcf7f 100%);
+            -webkit-appearance: slider-vertical;
+            appearance: slider-vertical;
+            width: 8px;
+            height: 150px;
+            background: linear-gradient(to top, #ff6b6b 0%, #ffd93d 50%, #6bcf7f 100%);
             border-radius: 5px;
             outline: none;
             cursor: pointer;
-            transform: rotate(-90deg) translate(-40%, -5%);;
-            transform-origin: center;
-            position: absolute;
-            top: 11px;
-            left: -60px;
+            writing-mode: bt-lr;
+            -webkit-writing-mode: vertical-lr;
+            pointer-events: auto;
+            z-index: 10000;
         }
 
         .zoom-slider::-webkit-slider-thumb {
@@ -436,6 +438,8 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            pointer-events: auto;
+            z-index: 10000;
         }
 
         .zoom-btn:hover {
@@ -513,9 +517,13 @@
                                max="3"
                                step="0.02"
                                value="1"
+                               orient="vertical"
                                oninput="handleZoomSlider(this.value)"
                                onchange="handleZoomSlider(this.value)"
-                               title="확대/축소">
+                               title="확대/축소"
+                               onmousedown="event.stopPropagation();"
+                               onmousemove="event.stopPropagation();"
+                               onmouseup="event.stopPropagation();">
                     </div>
                     <div class="zoom-value" id="zoomValue">100%</div>
                     <button class="zoom-btn" onclick="resetZoom()" title="초기화" style="margin-top: 10px; font-size: 12px;">🏠</button>
@@ -587,6 +595,7 @@
         function initializeCytoscape() {
             cy = cytoscape({
                 container: document.getElementById('cy'),
+                wheelSensitivity: 0,
                 
                 style: [
                     {
@@ -1140,22 +1149,28 @@
             showLoadingState(true);
 
             try {
-                const response = await fetch(`${BACKEND_API_URL}/analyze`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        concepts: concepts
-                    })
-                });
+                /* START: 백엔드 API 연결 코드 */
+                // const response = await fetch(`${BACKEND_API_URL}/analyze`, {
+                //     method: 'POST',
+                //     headers: {
+                //         'Content-Type': 'application/json',
+                //     },
+                //     body: JSON.stringify({
+                //         concepts: concepts
+                //     })
+                // });
 
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || `서버 오류: ${response.status}`);
-                }
+                // if (!response.ok) {
+                //     const errorData = await response.json();
+                //     throw new Error(errorData.error || `서버 오류: ${response.status}`);
+                // }
 
-                const data = await response.json();
+                // const data = await response.json();
+                /* END: 백엔드 API 연결 코드 */
+
+                /* START: 테스트 데이터 (백엔드 연결 전 UI 테스트용) */
+                const data = generateTestData(concepts);
+                /* END: 테스트 데이터 */
 
                 // 생성된 데이터로 conceptData 업데이트
                 conceptData = {
@@ -1196,6 +1211,34 @@
                 isGenerating = false;
                 showLoadingState(false);
             }
+        }
+
+        // 테스트 데이터 생성 함수 (UI 개발 및 테스트용)
+        function generateTestData(inputConcepts) {
+            const conceptCount = inputConcepts.length;
+
+            if (conceptCount === 1) {
+                return {
+                    concepts: [{
+                        name: inputConcepts[0],
+                        unique: ["특성1", "특성2", "특성3", "특성4", "특성5", "특성6"]
+                    }],
+                    shared_concepts: [],
+                    analysis_type: "single"
+                };
+            }
+
+            const testShared = ["공통점1", "공통점2", "공통점3"];
+            const testConcepts = inputConcepts.map((concept, i) => ({
+                name: concept,
+                unique: [`${concept} 고유특성1`, `${concept} 고유특성2`, `${concept} 고유특성3`]
+            }));
+
+            return {
+                concepts: testConcepts,
+                shared_concepts: testShared,
+                analysis_type: "comparison"
+            };
         }
 
 
@@ -1283,88 +1326,44 @@
                     updateZoomValue(zoomLevel);
                 });
 
-                // Add wheel zoom to the container
-                const cyContainer = document.getElementById('cy');
-                cyContainer.addEventListener('wheel', function(e) {
-                    e.preventDefault();
-
-                    if (cy && conceptData) {
-                        const currentZoom = cy.zoom();
-                        const zoomFactor = e.deltaY > 0 ? 0.98 : 1.02; // 2% 단위로 조정
-                        const newZoom = Math.max(0.25, Math.min(3, currentZoom * zoomFactor));
-
-                        // Zoom towards mouse position
-                        const renderedPosition = {
-                            x: e.offsetX,
-                            y: e.offsetY
-                        };
-
-                        cy.zoom({
-                            level: newZoom,
-                            renderedPosition: renderedPosition
-                        });
-
-                        updateZoomSlider(newZoom);
-                        updateZoomValue(newZoom);
-                    }
-                }, { passive: false });
 
                 // Enhanced slider event handling
                 const zoomSlider = document.getElementById('zoomSlider');
                 if (zoomSlider) {
-                    // 슬라이더 드래그 시작
-                    zoomSlider.addEventListener('mousedown', function() {
-                        document.body.style.userSelect = 'none'; // 드래그 중 텍스트 선택 방지
+                    // 슬라이더 이벤트 전파 중단
+                    zoomSlider.addEventListener('mousedown', function(e) {
+                        e.stopPropagation();
+                        document.body.style.userSelect = 'none';
                     });
 
-                    // 슬라이더 드래그 끝
-                    zoomSlider.addEventListener('mouseup', function() {
+                    zoomSlider.addEventListener('mousemove', function(e) {
+                        e.stopPropagation();
+                    });
+
+                    zoomSlider.addEventListener('mouseup', function(e) {
+                        e.stopPropagation();
                         document.body.style.userSelect = '';
+                    });
+
+                    zoomSlider.addEventListener('click', function(e) {
+                        e.stopPropagation();
                     });
 
                     // 터치 이벤트 지원
                     zoomSlider.addEventListener('touchstart', function(e) {
                         e.preventDefault();
+                        e.stopPropagation();
                     }, { passive: false });
 
                     zoomSlider.addEventListener('touchmove', function(e) {
                         e.preventDefault();
-                        // 터치 위치 계산하여 슬라이더 값 업데이트
-                        const touch = e.touches[0];
-                        const rect = zoomSlider.getBoundingClientRect();
-                        const percentage = Math.max(0, Math.min(1, (touch.clientX - rect.left) / rect.width));
-                        const value = 0.25 + (percentage * (3 - 0.25));
-                        handleZoomSlider(value);
+                        e.stopPropagation();
                     }, { passive: false });
 
-                    // 키보드 지원 (슬라이더 포커스 시)
-                    zoomSlider.addEventListener('keydown', function(e) {
-                        const currentValue = parseFloat(this.value);
-                        let newValue = currentValue;
-
-                        switch(e.key) {
-                            case 'ArrowUp':
-                            case 'ArrowRight':
-                                newValue = Math.min(3, currentValue + 0.02);
-                                break;
-                            case 'ArrowDown':
-                            case 'ArrowLeft':
-                                newValue = Math.max(0.25, currentValue - 0.02);
-                                break;
-                            case 'Home':
-                                newValue = 0.25;
-                                break;
-                            case 'End':
-                                newValue = 3;
-                                break;
-                            default:
-                                return;
-                        }
-
-                        e.preventDefault();
-                        this.value = newValue;
-                        handleZoomSlider(newValue);
+                    zoomSlider.addEventListener('touchend', function(e) {
+                        e.stopPropagation();
                     });
+
                 }
             }
         }
