@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
 import uvicorn
 import logging
 from config import config
@@ -41,6 +41,10 @@ async def startup_event():
         raise e
 
 @app.get("/")
+async def root():
+    return FileResponse("ICE.html")
+
+@app.get("/default")
 async def root():
     """Health check endpoint"""
     return {

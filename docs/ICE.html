@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>개념 비교 모드 - Interactive Concept Explorer</title>
+    <title>ICE - Interactive Concept Explorer</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.26.0/cytoscape.min.js"></script>
     <style>
         * {
@@ -1150,26 +1150,26 @@
 
             try {
                 /* START: 백엔드 API 연결 코드 */
-                // const response = await fetch(`${BACKEND_API_URL}/analyze`, {
-                //     method: 'POST',
-                //     headers: {
-                //         'Content-Type': 'application/json',
-                //     },
-                //     body: JSON.stringify({
-                //         concepts: concepts
-                //     })
-                // });
+                const response = await fetch(`${BACKEND_API_URL}/analyze`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        concepts: concepts
+                    })
+                });
 
-                // if (!response.ok) {
-                //     const errorData = await response.json();
-                //     throw new Error(errorData.error || `서버 오류: ${response.status}`);
-                // }
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `서버 오류: ${response.status}`);
+                }
 
-                // const data = await response.json();
+                const data = await response.json();
                 /* END: 백엔드 API 연결 코드 */
 
                 /* START: 테스트 데이터 (백엔드 연결 전 UI 테스트용) */
-                const data = generateTestData(concepts);
+                //const data = generateTestData(concepts);
                 /* END: 테스트 데이터 */
 
                 // 생성된 데이터로 conceptData 업데이트
