@@ -1134,7 +1134,7 @@
                 return;
             }
 
-            let code = "graph TD\n";
+            let code = "graph LR\n";
 
             // 스타일 정의
             code += "    classDef shared fill:#6bcf7f,stroke:#2ed573,stroke-width:2px,color:#fff\n";
@@ -1144,6 +1144,7 @@
             conceptData.concepts.forEach((concept, i) => {
                 const mainId = String.fromCharCode(65 + i); // A, B, C, D, E
                 code += `    classDef main${i + 1} fill:#${['ff6b6b', '4d79ff', 'a8edea', 'ffa8e4', 'ff9f43'][i]},stroke-width:3px,color:#fff\n`;
+                code += `    classDef unique${i + 1} fill:#${['ff6b6b', '4d79ff', 'a8edea', 'ffa8e4', 'ff9f43'][i]},stroke-width:3px,color:#fff\n`;
                 code += `    ${mainId}["${concept.name}"]:::main${i + 1}\n`;
             });
 
@@ -1166,7 +1167,7 @@
                 const mainId = String.fromCharCode(65 + conceptIndex);
                 concept.unique.slice(0, 6).forEach((uniqueConcept, i) => {
                     const id = `U${conceptIndex}${i}`;
-                    code += `    ${id}["${uniqueConcept}"]:::unique\n`;
+                    code += `    ${id}["${uniqueConcept}"]:::unique${conceptIndex+1}\n`;
                     code += `    ${mainId} --> ${id}\n`;
                 });
             });
