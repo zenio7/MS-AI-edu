@@ -1183,23 +1183,24 @@
                 // 그래프 다시 생성
                 generateGraph();
 
-                let message;
-                if (conceptCount === 1) {
-                    message = `✨ AI가 "${concepts[0]}"의 분석을 완료했습니다!\n`;
-                    message += `핵심 특성: ${data.concepts[0].unique.length}개`;
-                } else {
-                    message = `✨ AI가 ${conceptCount}개 개념의 비교 분석을 완료했습니다!\n`;
-                    message += `공통 개념: ${data.shared_concepts.length}개\n`;
-                    message += `총 고유 개념: ${data.concepts.reduce((sum, c) => sum + c.unique.length, 0)}개`;
-                }
+                ///// 분석 완료 메시지 start /////
+                // let message;
+                // if (conceptCount === 1) {
+                //     message = `✨ AI가 "${concepts[0]}"의 분석을 완료했습니다!\n`;
+                //     message += `핵심 특성: ${data.concepts[0].unique.length}개`;
+                // } else {
+                //     message = `✨ AI가 ${conceptCount}개 개념의 비교 분석을 완료했습니다!\n`;
+                //     message += `공통 개념: ${data.shared_concepts.length}개\n`;
+                //     message += `총 고유 개념: ${data.concepts.reduce((sum, c) => sum + c.unique.length, 0)}개`;
+                // }
 
-                if (data.analysis_id) {
-                    message += `\n\n🔍 분석 ID: ${data.analysis_id}`;
-                    console.log(`LangSmith Trace ID: ${data.analysis_id}`);
-                }
+                // if (data.analysis_id) {
+                //     message += `\n\n🔍 분석 ID: ${data.analysis_id}`;
+                //     console.log(`LangSmith Trace ID: ${data.analysis_id}`);
+                // }
 
-                alert(message);
-
+                // alert(message);
+                ///// 분석 완료 메시지 end /////
             } catch (error) {
                 console.error('AI 분석 중 오류:', error);
 
