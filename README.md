@@ -14,16 +14,15 @@ AI를 활용한 개념 비교 시각화 도구입니다. 두 개념을 입력하
 
 ```
 MS-AI-edu/
-├── backend/                 # Python FastAPI 백엔드
-│   ├── main.py             # FastAPI 메인 서버
-│   ├── config.py           # 환경설정 관리
-│   ├── models.py           # Pydantic 데이터 모델
-│   ├── services/           # 비즈니스 로직
-│   │   └── concept_analyzer.py  # AI 개념 분석 서비스
-│   ├── requirements.txt    # Python 의존성
-│   └── .env.example       # 환경변수 예제
-└── docs/
-    └── index.html         # 프론트엔드 (HTML + JavaScript)
+├── main.py                  # FastAPI 메인 서버
+├── config.py                # 환경설정 관리
+├── models.py                # Pydantic 데이터 모델
+├── services/                # 비즈니스 로직
+│   └── concept_analyzer.py  # AI 개념 분석 서비스
+├── requirements.txt         # Python 의존성
+├── .env.example             # 환경변수 예제
+└── static/                  # 프론트엔드 (HTML + JavaScript)
+    └── ICE.html             # Interactive Concept Explorer : ICE 랜딩페이지 
 ```
 
 ## 🚀 시작하기
@@ -45,14 +44,14 @@ cp .env.example .env
 ```bash
 # OpenAI API 설정
 OPENAI_API_KEY=your_openai_api_key_here
-OPENAI_MODEL=gpt-3.5-turbo
+OPENAI_MODEL=gpt-4.1
 
 # LangSmith 설정 (선택사항)
 LANGCHAIN_TRACING_V2=true
 LANGCHAIN_API_KEY=your_langsmith_api_key_here
 LANGCHAIN_PROJECT=concept-mindmap
 
-# 서버 설정
+# 서버 설정(local test)
 HOST=localhost
 PORT=8000
 DEBUG=true
@@ -62,8 +61,7 @@ DEBUG=true
 
 ```bash
 # 백엔드 서버 시작
-cd backend
-python main.py
+uvicorn main:app --reload
 ```
 
 서버가 실행되면 `http://localhost:8000`에서 API가 제공됩니다.
