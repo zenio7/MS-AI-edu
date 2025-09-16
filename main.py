@@ -42,7 +42,7 @@ async def startup_event():
 
 @app.get("/")
 async def root():
-    return FileResponse("ICE.html")
+    return FileResponse("static/ICE.html")
 
 @app.get("/default")
 async def root():
