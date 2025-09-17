@@ -1,6 +1,6 @@
-# AI-Powered Concept Mindmap 🧠
+# ICE - Interactive Concept Explorer 🧠
 
-AI를 활용한 개념 비교 시각화 도구입니다. 두 개념을 입력하면 AI가 분석하여 공통점과 차이점을 인터랙티브 그래프로 보여줍니다.
+AI를 활용한 개념 비교 시각화 도구입니다. 궁금한 개념(단어 기반)을 입력하면 AI가 분석하여 공통점과 차이점을 인터랙티브 그래프로 보여줍니다.
 
 ## 🌟 주요 기능
 
@@ -19,7 +19,7 @@ MS-AI-edu/
 ├── models.py                # Pydantic 데이터 모델
 ├── services/                # 비즈니스 로직
 │   └── concept_analyzer.py  # AI 개념 분석 서비스
-├── requirements.txt         # Python 의존성
+├── requirements.txt         # Python 디펜던시 패키지 목록
 ├── .env.example             # 환경변수 예제
 └── static/                  # 프론트엔드 (HTML + JavaScript)
     └── ICE.html             # Interactive Concept Explorer : ICE 랜딩페이지 
@@ -62,13 +62,13 @@ DEBUG=true
 ```bash
 # 백엔드 서버 시작
 uvicorn main:app --reload
+# or
+python main.py
 ```
-
-서버가 실행되면 `http://localhost:8000`에서 API가 제공됩니다.
 
 ### 4. 프론트엔드 접근
 
-`docs/index.html` 파일을 브라우저에서 열어서 사용할 수 있습니다.
+`static/ICE.html` 파일을 브라우저에서 열어서 사용할 수 있습니다.
 
 ## 📡 API 엔드포인트
 
@@ -148,17 +148,13 @@ LangSmith를 활용하여 프롬프트 실험과 성능 추적이 가능합니�
 - **노란색 노드**: 첫 번째 개념의 고유 요소
 - **핑크색 노드**: 두 번째 개념의 고유 요소
 
-## 🚨 문제 해결
+## 📈 향후 과제
 
-### 백엔드 연결 오류
-- 백엔드 서버가 실행 중인지 확인 (`python main.py`)
-- 포트 8000이 사용 가능한지 확인
-- CORS 설정 확인
+### 기능 고도화
+- 관련 개념의 개수 조정
 
-### API 키 오류
-- OpenAI API 키가 올바른지 확인
-- 계정에 충분한 크레딧이 있는지 확인
-- API 키 권한 설정 확인
+### 상용 서비스 기능추가 제안
+- Notion, Typora 등 
 
 ## 📝 라이센스
 
